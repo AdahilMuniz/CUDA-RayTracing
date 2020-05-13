@@ -25,7 +25,7 @@ $(OBJ_DIR):
 	mkdir $@
 
 run:
-	./$(APP) > result.ppm
+	./$(APP)
 
 clean:
 	rm -rf $(OBJ) $(APP) result.ppm

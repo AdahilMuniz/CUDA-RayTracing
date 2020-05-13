@@ -1,5 +1,7 @@
 #include <iostream>
 #include <vector>
+#include <time.h>
+#include <fstream>
 
 #include "Geometry.h"
 #include "Sphere.h"
@@ -34,6 +36,8 @@ __global__ void create_world(Object ** obj_list, Light ** light_list);
 
 int main(int argc, char const *argv[])
 {
+    //REsult File
+    ofstream resultfile ("result.ppm");
     //Dimensions
     int nx = 512;
     int ny = 512;
@@ -77,24 +81,27 @@ int main(int argc, char const *argv[])
     create_world<<<1,1>>>(d_obj_list, d_light_list);
 
     //Render
+    clock_t begin = clock();
     render<<<n_blocks, n_threads>>>(cam, d_obj_list, d_light_list, 4, 3, buffer);
+    clock_t end = clock();
+    double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+    cout << "It spent: " << time_spent <<"s" << " to render." << endl;
 
     checkCudaErrors(cudaGetLastError());
     checkCudaErrors(cudaDeviceSynchronize());
 
     //Generate PPM Image
-    cout << "P3\n" << nx << " " << ny << "\n255\n";
+    resultfile << "P3\n" << nx << " " << ny << "\n255\n";
     for (int j = ny-1; j >= 0; j--) {
         for (int i = 0; i < nx; i++) {
             size_t pixel_index = j*nx + i;
-            //cout << "I am here" << endl;
             int ir = int(255.99*buffer[pixel_index].r);
             int ig = int(255.99*buffer[pixel_index].g);
             int ib = int(255.99*buffer[pixel_index].b);
             if (ir < 0) ir = 0;
             if (ig < 0) ig = 0;
             if (ib < 0) ib = 0;
-            std::cout << ir << " " << ig << " " << ib << "\n";
+            resultfile << ir << " " << ig << " " << ib << "\n";
         }
     }
 
