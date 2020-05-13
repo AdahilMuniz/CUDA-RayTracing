@@ -3,5 +3,5 @@ This is just a case of study in CUDA, the raytracing implemented here is REALLY 
 Just an example:
 
 <p align="center">
-    <img width="200" height="200" src="resources/spheres.ppm">
+    <img width="200" height="200" src="resources/spheres.png">
 </p>

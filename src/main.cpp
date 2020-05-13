@@ -1,5 +1,7 @@
 #include <iostream>
 #include <vector>
+#include <time.h>
+#include <fstream>
 
 #include "Geometry.h"
 #include "Sphere.h"
@@ -20,6 +22,7 @@ void render (const camera_t &cam, const vector<Object *> &obj_list, const vector
 
 int main(int argc, char const *argv[])
 {
+    ofstream resultfile ("result.ppm");
     int nx = 512;
     int ny = 512;
     int ns = 10;
@@ -50,17 +53,22 @@ int main(int argc, char const *argv[])
     light_list.push_back(new DirectionalLight(vec4_t{ 1.0, 1.0, 1.0, 0.0 }, vec4_t{ 1.0, 1.0, 1.0, 0.0 }));
     light_list.push_back(new DirectionalLight(vec4_t{ 1.0, 1.0, 1.0, 0.0 }, vec4_t{ -1.0, 1.0, 1.0, 0.0 }));
 
+    clock_t begin = clock();
     render(cam, obj_list, light_list, buffer);
+    clock_t end = clock();
+    double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+    cout << "It spent: " << time_spent <<"s" << " to render." << endl;
 
     //Generate PPM Image
-    cout << "P3\n" << nx << " " << ny << "\n255\n";
+    
+    resultfile << "P3\n" << nx << " " << ny << "\n255\n";
     for (int j = ny-1; j >= 0; j--) {
         for (int i = 0; i < nx; i++) {
             size_t pixel_index = j*nx + i;
             int ir = int(255.99*buffer[pixel_index].r);
             int ig = int(255.99*buffer[pixel_index].g);
             int ib = int(255.99*buffer[pixel_index].b);
-            std::cout << ir << " " << ig << " " << ib << "\n";
+            resultfile << ir << " " << ig << " " << ib << "\n";
         }
     }
 
