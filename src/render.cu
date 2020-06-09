@@ -1,113 +1,4 @@
-#include <iostream>
-#include <vector>
-#include <time.h>
-#include <fstream>
-
-#include "Geometry.h"
-#include "Sphere.h"
-#include "Material.h"
-#include "Object.h"
-#include "Light.h"
-#include "AmbientLight.h"
-#include "DirectionalLight.h"
-
-#include "vec4.h"
-#include "ray.h"
-#include "camera.h"
-
-using namespace std;
-
-//Got directly from "Accelerated Ray Tracing in One Weekend in CUDA" tutorial
-#define checkCudaErrors(val) check_cuda( (val), #val, __FILE__, __LINE__ )
-void check_cuda(cudaError_t result, char const *const func, const char *const file, int const line) {
-    if (result) {
-        cerr << "CUDA error = " << static_cast<unsigned int>(result) << " at " <<
-            file << ":" << line << " '" << func << "' \n";
-        // Make sure we call CUDA Device Reset before exiting
-        cudaDeviceReset();
-        exit(99);
-    }
-}
-
-__device__ vec4_t raycast (ray_t ray, Object ** obj_list, Light ** light_list, int n_obj, int n_light, float near, int depth);
-__global__ void render (camera_t * cam, Object ** obj_list, Light ** light_list, int n_obj, int n_light, vec4_t * buffer);
-__global__ void create_world(Object ** obj_list, Light ** light_list);
-
-
-int main(int argc, char const *argv[])
-{
-    //REsult File
-    ofstream resultfile ("result.ppm");
-    //Dimensions
-    int nx = 512;
-    int ny = 512;
-    //int ns = 10;
-    //Thread Size
-    int tx = 8;
-    int ty = 8;
-    //Block and Thread
-    dim3 n_blocks (nx+1/tx, ny+1/ty);
-    dim3 n_threads(tx, ty);
-
-    vec4_t * buffer; //Color buffer
-    
-    //Scene list
-    Object ** d_obj_list;
-    Light  ** d_light_list;
-
-    //Camera
-    camera_t * cam;
-
-    //Allocate Camera
-    checkCudaErrors(cudaMallocManaged((void **)&cam, sizeof(camera_t)));
-    *cam = {
-        vec4_t{0.0,3.0,10.0,1.0}, //Position
-        vec4_t{0.0,0.0,0.0,1.0}, //Lookat
-        vec4_t{0.0,1.0,0.0,0.0}, //Up
-        vec2_t{(float)nx,(float)ny}, // Resolution
-        vec2_t{2.0,2.0}, // Dimension
-        2.0 // Near
-
-    };
-
-
-    //Allocate buffer
-    float bufer_space = cam->resolution.x * cam->resolution.y * sizeof(vec4_t);
-    checkCudaErrors(cudaMallocManaged((void **)&buffer, bufer_space));
-
-    //Allocate scene elements
-    checkCudaErrors(cudaMalloc((void **)&d_obj_list  , sizeof(Object *) * 4));
-    checkCudaErrors(cudaMalloc((void **)&d_light_list, sizeof(Light  *) * 3));
-    create_world<<<1,1>>>(d_obj_list, d_light_list);
-
-    //Render
-    clock_t begin = clock();
-    render<<<n_blocks, n_threads>>>(cam, d_obj_list, d_light_list, 4, 3, buffer);
-    clock_t end = clock();
-    double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-    cout << "It spent: " << time_spent <<"s" << " to render." << endl;
-
-    checkCudaErrors(cudaGetLastError());
-    checkCudaErrors(cudaDeviceSynchronize());
-
-    //Generate PPM Image
-    resultfile << "P3\n" << nx << " " << ny << "\n255\n";
-    for (int j = ny-1; j >= 0; j--) {
-        for (int i = 0; i < nx; i++) {
-            size_t pixel_index = j*nx + i;
-            int ir = int(255.99*buffer[pixel_index].r);
-            int ig = int(255.99*buffer[pixel_index].g);
-            int ib = int(255.99*buffer[pixel_index].b);
-            if (ir < 0) ir = 0;
-            if (ig < 0) ig = 0;
-            if (ib < 0) ib = 0;
-            resultfile << ir << " " << ig << " " << ib << "\n";
-        }
-    }
-
-
-    return 0;
-}
+#include "render.h"
 
 __device__
 vec4_t raycast (ray_t ray, Object ** obj_list, Light ** light_list, int n_obj, int n_light, float near, int depth){
@@ -168,13 +59,8 @@ vec4_t raycast (ray_t ray, Object ** obj_list, Light ** light_list, int n_obj, i
     return accucolor;
 }
 
-__device__
-vec4_t test_func(){
-    return vec4_t{1.0,1.0,1.0,1.0};
-}
-
 __global__
-void render (camera_t * cam, Object ** obj_list, Light ** light_list, int n_obj, int n_light, vec4_t * buffer) {
+void render (camera_t * cam, Object ** obj_list, Light ** light_list, int dn_obj, int dn_light, vec4_t * buffer) {
 
     int x = threadIdx.x + blockIdx.x * blockDim.x;
     int y = threadIdx.y + blockIdx.y * blockDim.y;
@@ -192,9 +78,7 @@ void render (camera_t * cam, Object ** obj_list, Light ** light_list, int n_obj,
 
     //Scan screen
     vec4_t direction = (origin_screen + up * (y) + left * (-x)).unit();
-    buffer[y*width + x] = raycast(ray_t{cam->position, direction}, obj_list, light_list, n_obj, n_light, cam->n, 0);
-
-
+    buffer[y*width + x] = raycast(ray_t{cam->position, direction}, obj_list, light_list, dn_obj, dn_light, cam->n, 0);
 }
 
 __global__
@@ -210,6 +94,107 @@ void create_world(Object ** obj_list, Light ** light_list){
         *(light_list+1)   = new DirectionalLight(vec4_t{ 1.0, 1.0, 1.0, 0.0 }, vec4_t{ -1.0, 1.0, 1.0, 0.0 });
         *(light_list+2)   = new DirectionalLight(vec4_t{ 1.0, 1.0, 1.0, 0.0 }, vec4_t{ 1.0, -1.0, 1.0, 0.0 });
     }
+}
+
+Render::Render(int _nx, int _ny){
+    n_obj = 4;
+    n_light = 3;
+
+    nx = _nx;
+    ny = _ny;
+}
+
+Render::~Render(){
+    //
+}
+
+void Render::initWord(){
+    //Allocate Camera
+    allocateGPUSharedMem((void **)&cam, sizeof(camera_t));
+    *cam = {
+        vec4_t{0.0,3.0,10.0,1.0}, //Position
+        vec4_t{0.0,0.0,0.0,1.0}, //Lookat
+        vec4_t{0.0,1.0,0.0,0.0}, //Up
+        vec2_t{(float)nx,(float)ny}, // Resolution
+        vec2_t{2.0,2.0}, // Dimension
+        2.0 // Near
+
+    };
 
 
+    //Allocate buffer
+    int buffer_space = (int) cam->resolution.x * cam->resolution.y * sizeof(vec4_t);
+    allocateGPUSharedMem((void **)&h_buffer, buffer_space);
+    //allocateGPUMem((void **)&h_buffer , buffer_space);
+
+    //Allocate scene elements
+    allocateGPUMem((void **)&d_obj_list  , sizeof(Object *) * n_obj);
+    allocateGPUMem((void **)&d_light_list, sizeof(Light  *) * n_light);
+
+    create_world<<<1,1>>>(d_obj_list, d_light_list);
+}
+
+void Render::renderScene (int nx_block, int ny_block, int nx_thread, int ny_thread, vec4_t * buff ){
+    //Block and Thread
+    dim3 n_blocks (nx_block, ny_block);
+    dim3 n_threads(nx_thread, ny_thread);
+    //vec4_t a = h_buffer[0];
+    
+    render<<<n_blocks, n_threads>>>(cam, d_obj_list, d_light_list, n_obj, n_light, h_buffer);
+    checkGPUErrors();
+    syncGPU();
+    //buff = h_buffer;
+    cudaMemcpy(buff, h_buffer, (int) nx * ny * sizeof(vec4_t), cudaMemcpyDeviceToHost);
+}
+
+void Render::updateCamera (float desloc, float deltaX, float deltaY){
+    /*
+    *cam = {
+        vec4_t{0.0,3.0,10.0,1.0}, //Position
+        vec4_t{0.0,0.0,0.0,1.0}, //Lookat
+        vec4_t{0.0,1.0,0.0,0.0}, //Up
+        vec2_t{(float)nx,(float)ny}, // Resolution
+        vec2_t{2.0,2.0}, // Dimension
+        2.0 // Near
+
+    };
+    */
+
+    //cam->position = cam->position + (cam->position - cam->lookat)*(desloc*0.01f);//Desloc
+
+    //Rotate
+    if (deltaX != 0.0 && deltaY != 0.0){
+        /* code */
+        vec4_t v = cross(cam->lookat - cam->position, cam->up);
+        //cam->Transform(rotateArbitrary(-deltaY, v), cam->lookat);
+        //cam->Transform(y_rotate(deltaX), cam->lookat);
+        cam->Transform(y_rotate(deltaX));
+    }
+
+
+}
+
+void Render::getBuffer(vec4_t * color_buffer){
+    //cout << "Test" << endl;
+    
+
+    //color_buffer[1] = vec4_t{0,0,0,0};
+
+    /*
+    color_buffer = h_buffer;
+    for (int j = ny-1; j >= 0; j--) {
+        for (int i = 0; i < nx; i++) {
+            size_t pixel_index = j*nx + i;
+            int ir = int(255.99*h_buffer[pixel_index].r);
+            int ig = int(255.99*h_buffer[pixel_index].g);
+            int ib = int(255.99*h_buffer[pixel_index].b);
+            if (ir < 0) ir = 0;
+            if (ig < 0) ig = 0;
+            if (ib < 0) ib = 0;
+            color_buffer[pixel_index].r = ir;
+            color_buffer[pixel_index].g = ig;
+            color_buffer[pixel_index].b = ib;
+            //resultfile << ir << " " << ig << " " << ib << "\n";
+        }
+    }*/
 }

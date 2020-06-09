@@ -1,22 +1,22 @@
 #include "DirectionalLight.h"
 
-__device__ 
+CUDA_DEV 
 DirectionalLight::DirectionalLight()
 {
 }
 
-__device__ 
+CUDA_DEV 
 DirectionalLight::DirectionalLight(vec4_t _intensity, vec4_t _direction): 
     Light(_intensity),
     direction(_direction.unit()){
 }
 
-__device__ 
+CUDA_DEV 
 DirectionalLight::~DirectionalLight()
 {
 }
 
-__device__ 
+CUDA_DEV 
 vec4_t DirectionalLight::Illumination(const Material &mat, const vec4_t &normal, const vec4_t &view, const vec4_t &P) const {
 
     vec4_t L = direction * (-1.0);
@@ -37,12 +37,12 @@ vec4_t DirectionalLight::Illumination(const Material &mat, const vec4_t &normal,
     return Id + Is;
 }
 
-__device__ 
+CUDA_DEV 
 float DirectionalLight::LightDistance(const vec4_t& point) const {
     return INFINITY;
 }
 
-__device__ 
+CUDA_DEV 
 vec4_t DirectionalLight::GetLightDirection(const vec4_t& point) const {
     return direction * (-1.0);
 }

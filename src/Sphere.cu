@@ -1,25 +1,25 @@
 #include "Sphere.h"
 
-__device__
+CUDA_DEV
 Sphere::Sphere()
 {
 
 }
 
-__device__
+CUDA_DEV
 Sphere::Sphere(const vec4_t &C, float R){
     center = C;
     radius = R;
 }
 
-__device__
+CUDA_DEV
 Sphere::~Sphere()
 {
 
 }
 
 //TODO: Get the Intercept Point
-__device__
+CUDA_DEV
 collision_t Sphere::CollideClosest(const ray_t &ray)
 {
     collision_t col;
@@ -45,7 +45,7 @@ collision_t Sphere::CollideClosest(const ray_t &ray)
     return col;
 }
 
-__device__
+CUDA_DEV
 vec4_t Sphere::getNormal(const vec4_t &point)
 {
     vec4_t n = point - center;

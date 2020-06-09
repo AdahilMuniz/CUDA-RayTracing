@@ -1,11 +1,11 @@
 #include "Geometry.h"
 
-__device__ 
+CUDA_DEV 
 Geometry::Geometry(){
 
 }
 
-__device__
+CUDA_DEV
 Geometry::~Geometry(){
 
 }

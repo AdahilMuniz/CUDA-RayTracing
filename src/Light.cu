@@ -1,17 +1,17 @@
 #include "Light.h"
 
-__device__ 
+CUDA_DEV 
 Light::Light()
 {
 }
 
-__device__ 
+CUDA_DEV 
 Light::Light(vec4_t intensity)
 {
     this->intensity = intensity;
 }
 
-__device__ 
+CUDA_DEV 
 Light::~Light()
 {
 }

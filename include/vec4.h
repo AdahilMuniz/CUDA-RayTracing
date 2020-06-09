@@ -2,6 +2,16 @@
 #ifndef __VEC_4_H_
 #define __VEC_4_H_
 
+#ifdef __CUDACC__
+#define CUDA_HOSTDEV __host__ __device__
+#define CUDA_HOST    __host__
+#define CUDA_DEV     __device__
+#else
+#define CUDA_HOSTDEV
+#define CUDA_HOST
+#define CUDA_DEV
+#endif
+
 #include <math.h>
 
 typedef struct vec4{
@@ -12,46 +22,46 @@ typedef struct vec4{
     };
 
     //Access
-    __host__ __device__ inline float  operator[](int i) const { return v[i]; }
-    __host__ __device__ inline float& operator[](int i) { return v[i]; };
+    CUDA_HOSTDEV inline float  operator[](int i) const { return v[i]; }
+    CUDA_HOSTDEV inline float& operator[](int i) { return v[i]; };
 
     //Vector Operations
-    __host__ __device__ inline void operator += (const vec4& _v) { x += _v.x; y += _v.y; z += _v.z; }
-    __host__ __device__ inline void operator -= (const vec4& _v) { x -= _v.x; y -= _v.y; z -= _v.z; }
-    __host__ __device__ inline void operator *= (const vec4& _v) { x *= _v.x; y *= _v.y; z *= _v.z; }
+    CUDA_HOSTDEV inline void operator += (const vec4& _v) { x += _v.x; y += _v.y; z += _v.z; }
+    CUDA_HOSTDEV inline void operator -= (const vec4& _v) { x -= _v.x; y -= _v.y; z -= _v.z; }
+    CUDA_HOSTDEV inline void operator *= (const vec4& _v) { x *= _v.x; y *= _v.y; z *= _v.z; }
 
-    __host__ __device__ inline vec4 operator + (const vec4& _v) const { vec4 vr{0.0,0.0,0.0,1.0}; vr.x = x + _v.x; vr.y = y + _v.y; vr.z = z + _v.z; return vr;}
-    __host__ __device__ inline vec4 operator - (const vec4& _v) const { vec4 vr{0.0,0.0,0.0,1.0}; vr.x = x - _v.x; vr.y = y - _v.y; vr.z = z - _v.z; return vr;}
-    __host__ __device__ inline vec4 operator * (const vec4& _v) const { vec4 vr{0.0,0.0,0.0,1.0}; vr.x = x * _v.x; vr.y = y * _v.y; vr.z = z * _v.z; return vr;}
+    CUDA_HOSTDEV inline vec4 operator + (const vec4& _v) const { vec4 vr{0.0,0.0,0.0,1.0}; vr.x = x + _v.x; vr.y = y + _v.y; vr.z = z + _v.z; return vr;}
+    CUDA_HOSTDEV inline vec4 operator - (const vec4& _v) const { vec4 vr{0.0,0.0,0.0,1.0}; vr.x = x - _v.x; vr.y = y - _v.y; vr.z = z - _v.z; return vr;}
+    CUDA_HOSTDEV inline vec4 operator * (const vec4& _v) const { vec4 vr{0.0,0.0,0.0,1.0}; vr.x = x * _v.x; vr.y = y * _v.y; vr.z = z * _v.z; return vr;}
 
-    __host__ __device__ inline vec4 operator -  () const { return vec4{-x,-y,-z,1.0}; }
+    CUDA_HOSTDEV inline vec4 operator -  () const { return vec4{-x,-y,-z,1.0}; }
 
 
     //Scalar Operations
-    __host__ __device__ inline void operator += (const float& a) { x += a; y += a; z += a; }
-    __host__ __device__ inline void operator -= (const float& a) { x -= a; y -= a; z -= a; }
-    __host__ __device__ inline void operator *= (const float& a) { x *= a; y *= a; z *= a; }
-    __host__ __device__ inline void operator /= (const float& a) { x /= a; y /= a; z /= a; }
+    CUDA_HOSTDEV inline void operator += (const float& a) { x += a; y += a; z += a; }
+    CUDA_HOSTDEV inline void operator -= (const float& a) { x -= a; y -= a; z -= a; }
+    CUDA_HOSTDEV inline void operator *= (const float& a) { x *= a; y *= a; z *= a; }
+    CUDA_HOSTDEV inline void operator /= (const float& a) { x /= a; y /= a; z /= a; }
 
-    __host__ __device__ inline vec4 operator + (const float& a) const { vec4 vr{0.0,0.0,0.0,1.0}; vr.x = x + a; vr.y = y + a; vr.z = z + a; return vr;}
-    __host__ __device__ inline vec4 operator - (const float& a) const { vec4 vr{0.0,0.0,0.0,1.0}; vr.x = x - a; vr.y = y - a; vr.z = z - a; return vr;}
-    __host__ __device__ inline vec4 operator * (const float& a) const { vec4 vr{0.0,0.0,0.0,1.0}; vr.x = x * a; vr.y = y * a; vr.z = z * a; return vr;}
-    __host__ __device__ inline vec4 operator / (const float& a) const { vec4 vr{0.0,0.0,0.0,1.0}; vr.x = x / a; vr.y = y / a; vr.z = z / a; return vr;}
+    CUDA_HOSTDEV inline vec4 operator + (const float& a) const { vec4 vr{0.0,0.0,0.0,1.0}; vr.x = x + a; vr.y = y + a; vr.z = z + a; return vr;}
+    CUDA_HOSTDEV inline vec4 operator - (const float& a) const { vec4 vr{0.0,0.0,0.0,1.0}; vr.x = x - a; vr.y = y - a; vr.z = z - a; return vr;}
+    CUDA_HOSTDEV inline vec4 operator * (const float& a) const { vec4 vr{0.0,0.0,0.0,1.0}; vr.x = x * a; vr.y = y * a; vr.z = z * a; return vr;}
+    CUDA_HOSTDEV inline vec4 operator / (const float& a) const { vec4 vr{0.0,0.0,0.0,1.0}; vr.x = x / a; vr.y = y / a; vr.z = z / a; return vr;}
 
     //
-    __host__ __device__ inline float length()    const { return sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]); }
-    __host__ __device__ inline float length_sq() const { return v[0]*v[0] + v[1]*v[1] + v[2]*v[2]; }
-    __host__ __device__ inline vec4  unit()      const { return vec4{ x/length(), y/length(), z/length(), w }; }
+    CUDA_HOSTDEV inline float length()    const { return sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]); }
+    CUDA_HOSTDEV inline float length_sq() const { return v[0]*v[0] + v[1]*v[1] + v[2]*v[2]; }
+    CUDA_HOSTDEV inline vec4  unit()      const { return vec4{ x/length(), y/length(), z/length(), w }; }
 
 } vec4_t;
 
 
-__host__ __device__ inline float dot  (const vec4& va, const vec4& vb) { return va.x*vb.x + va.y*vb.y + va.z*vb.z; }
-__host__ __device__ inline vec4  cross(const vec4& va, const vec4& vb) { return { va.y*vb.z - va.z*vb.y, va.z*vb.x - va.x*vb.z, va.x*vb.y - va.y*vb.x, 0.0f }; }
+CUDA_HOSTDEV inline float dot  (const vec4& va, const vec4& vb) { return va.x*vb.x + va.y*vb.y + va.z*vb.z; }
+CUDA_HOSTDEV inline vec4  cross(const vec4& va, const vec4& vb) { return { va.y*vb.z - va.z*vb.y, va.z*vb.x - va.x*vb.z, va.x*vb.y - va.y*vb.x, 0.0f }; }
 
-__host__ __device__ inline vec4_t reflection(const vec4_t& vi, const vec4_t& plan) { return (plan * dot(plan, vi))*(2.0) - vi; }
+CUDA_HOSTDEV inline vec4_t reflection(const vec4_t& vi, const vec4_t& plan) { return (plan * dot(plan, vi))*(2.0) - vi; }
 
-__host__ __device__ inline vec4_t refract(const vec4_t & incident, const vec4_t & normal, const float & ior_t, const float & ior_i) {
+CUDA_HOSTDEV inline vec4_t refract(const vec4_t & incident, const vec4_t & normal, const float & ior_t, const float & ior_i) {
     //T = eta*I + (eta*C1 - C2)*N
     //eta = etai/etat -> eta
     //C1 = cos(theta) = N.I -> n_dot_i
